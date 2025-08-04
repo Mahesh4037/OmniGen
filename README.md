@@ -125,8 +125,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 ## 📧 Contact
 
 **Author:** Mahesh Singla\
-**Email:** [maheshsingla.dev@gmail.com](mailto\:maheshsingla.dev@gmail.com)\
-**GitHub:** [github.com/maheshsingla-dev](https://github.com/maheshsingla-dev)
+**Email:** [maheshsingla.dev@gmail.com](mailto\:ssingla2004@gmail.com)\
+**GitHub:** [github.com/maheshsingla-dev](https://github.com/Mahesh4037)
 
 Feel free to open issues or contribute to the project!
 
