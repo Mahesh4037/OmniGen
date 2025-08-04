@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }} {# Include head content from base.html #}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    /* Apply the Inter font */
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Custom scrollbar for history (optional but nice) */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; } /* Adjusted dark thumb */
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; } /* Adjusted dark thumb hover */
+
+    /* Smoother Alpine collapse */
+    [x-collapse] { overflow: hidden; }
+    [x-collapse].transitioning { transition: height 0.3s ease-in-out; } /* Smoother ease */
+
+    /* Slightly refined range input thumb */
+    input[type=range].slider-thumb {
+        @apply h-4 w-4 bg-primary dark:bg-primary-dark rounded-full appearance-none cursor-pointer transition;
+    }
+    input[type=range].slider-thumb:hover {
+        @apply ring-2 ring-primary/30 dark:ring-primary-dark/30;
+    }
+     /* Webkit */
+    input[type=range].accent-primary::-webkit-slider-thumb {
+        @apply slider-thumb;
+        /* -webkit-appearance: none; margin-top: -6px; Ensure vertical alignment if needed */
+    }
+    .dark input[type=range].accent-primary-dark::-webkit-slider-thumb {
+         @apply slider-thumb;
+         /* -webkit-appearance: none; margin-top: -6px; */
+    }
+     /* Firefox */
+     input[type=range].accent-primary::-moz-range-thumb {
+        @apply slider-thumb border-none;
+     }
+    .dark input[type=range].accent-primary-dark::-moz-range-thumb {
+        @apply slider-thumb border-none;
+    }
+
+    /* Loading overlay animation */
+    .loading-overlay {
+        transition: opacity 0.4s ease-in-out, backdrop-filter 0.4s ease-in-out; /* Smoother fade + blur */
+    }
+
+    /* Button hover states */
+    .aspect-ratio-button, .style-preset-button, .generate-button, .download-button, .advanced-toggle-button {
+        transition: all 0.25s ease-in-out; /* Consistent smooth transition */
+    }
+    .aspect-ratio-button:hover:not(.active), .style-preset-button:hover:not(.active) {
+        transform: translateY(-2px); /* Subtle lift on hover */
+        filter: brightness(1.05);
+    }
+     .dark .aspect-ratio-button:hover:not(.active), .dark .style-preset-button:hover:not(.active) {
+        filter: brightness(1.15);
+    }
+    .generate-button:hover:not(:disabled) {
+         transform: scale(1.02); /* Slightly larger on hover */
+         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* Enhanced shadow */
+    }
+
+    /* ----- NEW ANIMATIONS FOR LOADING TEXT ----- */
+    @keyframes pulsate {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.03); }
+    }
+
+    .loading-text-pulse {
+        animation: pulsate 2s infinite ease-in-out;
+    }
+
+    @keyframes subtle-fade {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    .loading-subtext-fade {
+        animation: subtle-fade 2.5s infinite ease-in-out;
+        animation-delay: 0.3s; /* Optional: slight delay to desynchronize from main text */
+    }
+    /* ----- END OF NEW ANIMATIONS ----- */
+
+</style>
+{% endblock %}
+
+
+{% block title %}AI Image Generation Studio{% endblock %}
+
+{% block content %}
+<div x-data="{
+    loading: false,
+    advancedOpen: false,
+    selectedAspectRatio: '1:1',
+    selectedStyle: '',
+    promptValue: '{{ request.form['prompt'] or '' }}',
+    negativePromptValue: '{{ request.form['negative_prompt'] or 'blurry, low quality, pixelated, noisy, grainy, deformed, text, watermark, signature, worst quality, lowres, multiple limbs, extra fingers' }}',
+    stepsValue: {{ request.form['steps'] or 30 }},
+    guidanceValue: {{ request.form['guidance_scale'] or 7.0 }},
+    widthValue: {{ request.form['width'] or 1024 }},
+    heightValue: {{ request.form['height'] or 1024 }},
+    seedValue: '',
+
+    get aspectRatioDims() {
+        switch(this.selectedAspectRatio) {
+            case '16:9': return { width: 1280, height: 720 };
+            case '9:16': return { width: 720, height: 1280 };
+            case '4:3': return { width: 1024, height: 768 };
+            case '3:4': return { width: 768, height: 1024 };
+            case '21:9': return { width: 1344, height: 576 };
+            default: return { width: 1024, height: 1024 };
+        }
+    },
+    updateDims() {
+        const dims = this.aspectRatioDims;
+        this.widthValue = dims.width;
+        this.heightValue = dims.height;
+    },
+    appendStyle(style) {
+        this.selectedStyle = style;
+        const styleSuffix = `, ${style}`;
+        let current = this.promptValue;
+        ['Photorealistic','Anime','Fantasy Art','Cinematic','Illustration','3D Render']
+            .forEach(s => { current = current.replace(new RegExp(`\\s*,?\\s*${s}\\s*,?`, 'gi'), '').trim(); });
+        this.promptValue = current ? `${current.replace(/,$/, '')}${styleSuffix}` : style;
+    },
+    submitForm(event) {
+        this.loading = true;
+        this.$nextTick(() => event.target.submit());
+    },
+    getDimsText(ratio) {
+        const orig = this.selectedAspectRatio;
+        this.selectedAspectRatio = ratio;
+        const dims = this.aspectRatioDims;
+        this.selectedAspectRatio = orig;
+        return `(${dims.width}x${dims.height})`;
+    }
+}"
+    x-init="updateDims(); $watch('selectedAspectRatio', () => updateDims())"
+    class="font-sans" {# Apply base font here or in body via CSS #}
+    >
+
+    <div class="mb-10 text-center">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-3 text-gray-900 dark:text-white tracking-tight "><span class="text-primary dark:text-primary-dark">AI Image</span> Generation Studio</h1>
+        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Craft stunning visuals from your imagination using state-of-the-art diffusion models.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('gen_image') }}" @submit.prevent="submitForm($event)">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <div class="lg:col-span-3 space-y-6">
+                <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <label for="prompt" class="block text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a1 1 0 011-1h12a1 1 0 011 1v4.293zM16 6H4v4.586l6 6 6-6V6zM8 9a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd" />
+                        </svg>
+                        Describe your image:
+                    </label>
+                    <textarea id="prompt" name="prompt" rows="6" required x-model="promptValue"
+                              class="w-full p-3 border border-gray-300 dark:border-dark-border rounded-md bg-gray-50 dark:bg-dark-bg focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:ring-primary-dark/50 dark:focus:border-primary-dark transition duration-200 text-base placeholder-gray-400 dark:placeholder-gray-500"
+                              placeholder="e.g., A majestic corgi knight, steampunk city..."
+                    ></textarea>
+                </div>
+
+                <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <label class="block text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" viewBox="0 0 20 20" fill="currentColor">
+                           <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4V5h12v10zM9 9a1 1 0 100-2 1 1 0 000 2zm1-5a1 1 0 11-2 0 1 1 0 012 0zM7 9a1 1 0 100-2 1 1 0 000 2zm5-5a1 1 0 11-2 0 1 1 0 012 0zm3 5a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                         </svg>
+                        Aspect Ratio
+                    </label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <template x-for="ratio in ['1:1', '16:9', '9:16', '4:3', '3:4', '21:9']" :key="ratio">
+                            <button type="button" @click="selectedAspectRatio = ratio"
+                                    :class="{
+                                        'bg-primary text-white dark:bg-primary-dark ring-2 ring-primary/50 dark:ring-primary-dark/50': selectedAspectRatio === ratio,
+                                        'bg-gray-100 hover:bg-gray-200 dark:bg-dark-section dark:hover:bg-dark-hover text-gray-700 dark:text-gray-300': selectedAspectRatio !== ratio,
+                                        'active': selectedAspectRatio === ratio
+                                    }"
+                                    class="aspect-ratio-button px-2 py-3 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-offset-dark-card flex flex-col items-center justify-center aspect-w-4 aspect-h-3"> {# Maintain aspect ratio for the button itself #}
+                                <span class="block text-base md:text-lg font-semibold" x-text="ratio"></span>
+                                <span class="block text-xs opacity-80 mt-0.5" x-text="getDimsText(ratio)"></span>
+                            </button>
+                        </template>
+                         {# These hidden inputs are still useful if you want the form to submit width/height even without JS #}
+                         {# <input type="hidden" id="width" name="width" x-model.number="widthValue"> #}
+                         {# <input type="hidden" id="height" name="height" x-model.number="heightValue"> #}
+                    </div>
+                </div>
+
+                 <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <label class="block text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                        </svg>
+                        Style Preset <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-1">(Optional)</span>
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                         <template x-for="style in ['Photorealistic', 'Anime', 'Fantasy Art', 'Cinematic', 'Illustration', '3D Render']" :key="style">
+                            <button type="button" @click="appendStyle(style)"
+                                    :class="{
+                                        'ring-2 ring-primary dark:ring-primary-dark ring-offset-2 dark:ring-offset-dark-card bg-primary/10 dark:bg-primary-dark/10 text-primary dark:text-primary-light': selectedStyle === style,
+                                        'bg-gray-100 hover:bg-gray-200 dark:bg-dark-section dark:hover:bg-dark-hover text-gray-700 dark:text-gray-300': selectedStyle !== style,
+                                        'active': selectedStyle === style
+                                    }"
+                                    class="style-preset-button px-4 py-2 rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50 dark:focus:ring-offset-dark-card">
+                                <span x-text="style"></span>
+                            </button>
+                         </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-6 flex flex-col">
+                 <div class="flex-grow bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20 flex flex-col items-center justify-center relative min-h-[400px] lg:min-h-[500px]"> {# Increased min-height slightly #}
+
+                    <div x-show="loading" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                         class="loading-overlay absolute inset-0 bg-white/80 dark:bg-dark-card/80 backdrop-blur-md flex flex-col items-center justify-center z-10 rounded-lg"> {# Smoother blur + transition #}
+                        <svg class="animate-spin h-12 w-12 text-primary dark:text-primary-dark mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-lg font-semibold text-gray-700 dark:text-gray-300 loading-text-pulse">Generating your masterpiece...</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 loading-subtext-fade">This might take a moment.</p>
+                    </div>
+
+                     <div class="w-full h-full flex flex-col items-center justify-center">
+                        {% if error %}
+                            <div class="text-center p-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-600/50 rounded-lg max-w-md shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h3 class="text-xl font-semibold text-red-800 dark:text-red-200 mb-2">Generation Failed</h3>
+                                <p class="text-sm text-red-600 dark:text-red-300">{{ error }}</p>
+                            </div>
+                        {% elif img_data %}
+                            <div class="w-full relative group">
+                                 <img src="data:image/png;base64,{{ img_data }}" alt="Generated Image" class="w-full h-auto max-h-[70vh] object-contain rounded-md border border-gray-200 dark:border-dark-border/50 shadow-md"> {# Added max-h #}
+                                 <div class="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+                                     <a href="data:image/png;base64,{{ img_data }}" download="omnigen-image.png"
+                                        class="download-button inline-flex items-center px-4 py-2 bg-white/80 dark:bg-black/70 backdrop-blur-sm border border-gray-300 dark:border-gray-600 rounded-full shadow-lg text-sm font-medium text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-black hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-primary-dark dark:focus:ring-offset-black/50">
+                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                                             <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                         </svg>
+                                         Download
+                                     </a>
+                                     </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center p-6 text-gray-400 dark:text-gray-500">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto mb-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                 </svg>
+                                <p class="text-lg font-medium">Your generated image will appear here.</p>
+                                <p class="text-sm">Describe your vision and click "Generate Image".</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                 </div>
+
+                 <div class="mt-6">
+                     <button type="submit" :disabled="loading || !promptValue.trim()"
+                             class="generate-button w-full inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-semibold rounded-md shadow-lg text-white bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 dark:from-primary-dark dark:to-secondary-dark dark:hover:from-primary-dark/90 dark:hover:to-secondary-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-offset-dark-bg disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none">
+                         <svg x-show="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                         </svg>
+                         <svg x-show="!loading" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                         </svg>
+                         <span x-text="loading ? 'Generating...' : 'Generate Image'">Generate Image</span>
+                     </button>
+                 </div>
+            </div>
+
+            <div class="lg:col-span-3 space-y-6">
+                 <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1v4m0 0h-4m4 0l-5-5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 0h-4" />
+                           </svg>
+                          Output Dimensions
+                     </h3>
+                     <div class="grid grid-cols-2 gap-4">
+                         <div>
+                             <label for="adv_width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Width</label>
+                             <input type="number" id="adv_width" name="width" min="256" max="1536" step="64" x-model.number="widthValue"
+                                    class="w-full p-2 border border-gray-300 dark:border-dark-border rounded-md bg-gray-50 dark:bg-dark-bg text-sm focus:ring-1 focus:ring-primary/50 focus:border-primary dark:focus:ring-primary-dark/50 dark:focus:border-primary-dark transition duration-150">
+                         </div>
+                          <div>
+                             <label for="adv_height" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Height</label>
+                             <input type="number" id="adv_height" name="height" min="256" max="1536" step="64" x-model.number="heightValue"
+                                    class="w-full p-2 border border-gray-300 dark:border-dark-border rounded-md bg-gray-50 dark:bg-dark-bg text-sm focus:ring-1 focus:ring-primary/50 focus:border-primary dark:focus:ring-primary-dark/50 dark:focus:border-primary-dark transition duration-150">
+                         </div>
+                     </div>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Note: These values are also controlled by the 'Aspect Ratio' buttons.</p>
+                 </div>
+                 <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <button type="button" @click="advancedOpen = !advancedOpen" class="advanced-toggle-button flex justify-between items-center w-full mb-3 text-left group">
+                        <span class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                             </svg>
+                            Advanced Settings
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500 transform transition-transform duration-300 ease-in-out group-hover:text-gray-600 dark:group-hover:text-gray-300" :class="{ 'rotate-180': advancedOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div x-show="advancedOpen" x-collapse.duration.300ms x-cloak class="transitioning">
+                        <div class="space-y-5 pt-4 border-t border-gray-200/80 dark:border-dark-border/50">
+                            <div>
+                                <label for="negative_prompt" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center group relative">
+                                    Negative Prompt
+                                    <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="Describe what you DON'T want to see (e.g., ugly, deformed, text, blurry).">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    </span>
+                                </label>
+                                <textarea id="negative_prompt" name="negative_prompt" rows="3" x-model="negativePromptValue"
+                                          class="w-full p-2 border border-gray-300 dark:border-dark-border rounded-md bg-gray-50 dark:bg-dark-bg text-sm focus:ring-1 focus:ring-primary/50 focus:border-primary dark:focus:ring-primary-dark/50 dark:focus:border-primary-dark transition duration-150 placeholder-gray-400 dark:placeholder-gray-500"
+                                          placeholder="e.g., ugly, deformed, text, blurry..."
+                                ></textarea>
+                            </div>
+
+                            <div>
+                                <label for="steps" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between group relative">
+                                    <span>
+                                        Steps
+                                        <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="Number of sampling steps. More steps can improve quality but take longer. (Range: 1-50)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </span>
+                                    </span>
+                                    <span class="font-mono text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-section rounded" x-text="stepsValue"></span>
+                                </label>
+                                <input type="range" id="steps" name="steps" min="1" max="50" step="1" x-model.number="stepsValue"
+                                       class="w-full h-2 bg-gray-200 dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary dark:accent-primary-dark">
+                            </div>
+
+                            <div>
+                                <label for="guidance_scale" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between group relative">
+                                    <span>
+                                        Guidance Scale
+                                        <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="How strongly the prompt guides generation. Higher values follow prompt more closely. (Range: 1-10)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </span>
+                                    </span>
+                                     <span class="font-mono text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-section rounded" x-text="parseFloat(guidanceValue).toFixed(1)"></span>
+                                </label>
+                                <input type="range" id="guidance_scale" name="guidance_scale" min="1.0" max="10.0" step="0.5" x-model.number="guidanceValue"
+                                       class="w-full h-2 bg-gray-200 dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary dark:accent-primary-dark">
+                            </div>
+
+                             </div>
+                    </div>
+                 </div>
+
+
+                 <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200/80 dark:border-dark-border/50">
+                        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                             </svg>
+                            Generation History
+                        </h2>
+                        <a href="{{ url_for('clear_history') }}" class="text-xs font-medium text-primary dark:text-primary-dark hover:underline focus:outline-none focus:ring-1 focus:ring-primary/50 rounded" title="Clear history for all generation types">Clear All</a>
+                    </div>
+                    <div class="space-y-3 max-h-[400px] lg:max-h-[calc(100vh-500px)] overflow-y-auto pr-2 custom-scrollbar"> {# Adjusted max-h slightly #}
+                        {% if history %}
+                            {% set image_history_exists = false %}
+                            {% for item in history | reverse %} {# Show newest first #}
+                                {% if item.type == 'image' %}
+                                {% set image_history_exists = true %}
+                                <a href="#" @click.prevent="promptValue='{{ item.prompt | e }}'; negativePromptValue='{{ item.negative_prompt | default('', true) | e }}'; stepsValue={{ item.steps | default(30) }}; guidanceValue={{ item.guidance_scale | default(7.0) }}; widthValue={{ item.width | default(1024) }}; heightValue={{ item.height | default(1024) }};"
+                                   class="block p-3 rounded-md bg-gray-50 dark:bg-dark-section border border-gray-200/50 dark:border-dark-border/30 hover:shadow-md hover:border-gray-300 dark:hover:border-dark-border/60 transition-all duration-150 group cursor-pointer">
+                                    <div class="flex items-center justify-between mb-1.5">
+                                         <span class="text-xs font-medium px-2 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
+                                            Image
+                                         </span>
+                                          <span class="text-xs text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">Reuse Settings</span>
+                                    </div>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 break-words" title="{{ item.prompt }}">{{ item.prompt }}</p>
+                                    {# Optionally display more info like dimensions #}
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ item.width }}x{{ item.height }}</p>
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                             {% if not image_history_exists %}
+                                <p class="text-gray-500 dark:text-gray-400 italic text-sm py-4 text-center">No image generation history yet.</p>
+                             {% endif %}
+                        {% else %}
+                            <p class="text-gray-500 dark:text-gray-400 italic text-sm py-4 text-center">No generation history yet.</p>
+                        {% endif %}
+                    </div>
+                 </div>
+
+            </div>
+
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }} {# Include scripts from base.html, assuming AlpineJS and Collapse plugin are loaded there #}
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script defer src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+{% endblock %}

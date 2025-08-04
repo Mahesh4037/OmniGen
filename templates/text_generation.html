@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}AI Text Generation Studio{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    /* Apply the Inter font */
+    body { font-family: 'Inter', sans-serif; }
+
+    /* Custom scrollbar for history/output */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+    /* Alpine collapse */
+    [x-collapse] { overflow: hidden; }
+    [x-collapse].transitioning { transition: height 0.3s ease-in-out; }
+
+    /* Range input thumb */
+    input[type=range].slider-thumb { @apply h-4 w-4 bg-primary dark:bg-primary-dark rounded-full appearance-none cursor-pointer transition; }
+    input[type=range].slider-thumb:hover { @apply ring-2 ring-primary/30 dark:ring-primary-dark/30; }
+    input[type=range].accent-primary::-webkit-slider-thumb { @apply slider-thumb; }
+    .dark input[type=range].accent-primary-dark::-webkit-slider-thumb { @apply slider-thumb; }
+    input[type=range].accent-primary::-moz-range-thumb { @apply slider-thumb border-none; }
+    .dark input[type=range].accent-primary-dark::-moz-range-thumb { @apply slider-thumb border-none; }
+
+    /* Loading overlay animation */
+    .loading-overlay { transition: opacity 0.4s ease-in-out, backdrop-filter 0.4s ease-in-out; }
+
+    /* Button hover states */
+    .generate-button, .advanced-toggle-button { transition: all 0.25s ease-in-out; }
+    .generate-button:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); }
+
+    /* Generated text styling */
+    .generated-text-output { white-space: pre-wrap; word-wrap: break-word; }
+
+    /* ----- Animations for loading text (from image_generation.html) ----- */
+    @keyframes pulsate {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.03); }
+    }
+
+    .loading-text-pulse {
+        animation: pulsate 2s infinite ease-in-out;
+    }
+
+    @keyframes subtle-fade {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    .loading-subtext-fade {
+        animation: subtle-fade 2.5s infinite ease-in-out;
+        animation-delay: 0.3s; /* Optional: slight delay to desynchronize from main text */
+    }
+    /* ----- END OF Animations for loading text ----- */
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div x-data="{
+        loading: false,
+        advancedOpen: false,
+        promptValue: '{{ request.form['prompt'] if request.form['prompt'] else '' }}',
+        maxLengthValue: {{ request.form['max_length'] or 512 }},
+        temperatureValue: {{ request.form['temperature'] or 0.7 }},
+        topPValue: {{ request.form['top_p'] or 0.9 }},
+
+        submitForm(event) {
+            this.loading = true;
+             this.$nextTick(() => {
+                 event.target.submit();
+             });
+        }
+    }"
+    class="font-sans"
+    >
+
+    <div class="mb-10 text-center">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-3 text-gray-900 dark:text-white tracking-tight"><span class="text-primary dark:text-primary-dark">AI Text</span> Generation Studio</h1>
+        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Craft compelling narratives, code snippets, or creative text formats.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('gen_text') }}" @submit.prevent="submitForm($event)">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <div class="lg:col-span-3 space-y-6">
+                <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <label for="prompt" class="block text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a1 1 0 011-1h12a1 1 0 011 1v4.293zM16 6H4v4.586l6 6 6-6V6zM8 9a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd" />
+                        </svg>
+                        Enter your prompt:
+                    </label>
+                    <textarea id="prompt" name="prompt" rows="8" required x-model="promptValue"
+                              class="w-full p-3 border border-gray-300 dark:border-dark-border rounded-md bg-gray-50 dark:bg-dark-bg focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:ring-primary-dark/50 dark:focus:border-primary-dark transition duration-200 text-base placeholder-gray-400 dark:placeholder-gray-500"
+                              placeholder="e.g., Write a python function that calculates Fibonacci numbers recursively..."
+                    ></textarea>
+                </div>
+
+                 <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <button type="button" @click="advancedOpen = !advancedOpen" class="advanced-toggle-button flex justify-between items-center w-full mb-3 text-left group">
+                        <span class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                             </svg>
+                             Advanced Settings
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500 transform transition-transform duration-300 ease-in-out group-hover:text-gray-600 dark:group-hover:text-gray-300" :class="{ 'rotate-180': advancedOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div x-show="advancedOpen" x-collapse.duration.300ms x-cloak class="transitioning">
+                        <div class="space-y-5 pt-4 border-t border-gray-200/80 dark:border-dark-border/50">
+                            <div>
+                                <label for="max_length" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between group relative">
+                                    <span>
+                                        Max Length (Tokens)
+                                        <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="Maximum number of tokens to generate. (Max: 1024)">
+                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </span>
+                                    </span>
+                                    <span class="font-mono text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-section rounded" x-text="maxLengthValue"></span>
+                                </label>
+                                <input type="range" id="max_length" name="max_length" min="32" max="1024" step="16" x-model.number="maxLengthValue"
+                                       class="w-full h-2 bg-gray-200 dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary dark:accent-primary-dark">
+                            </div>
+
+                            <div>
+                                <label for="temperature" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between group relative">
+                                    <span>
+                                        Temperature
+                                        <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="Controls randomness. Lower values are more deterministic, higher values more creative. (Range: 0.1-2.0)">
+                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </span>
+                                    </span>
+                                     <span class="font-mono text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-section rounded" x-text="parseFloat(temperatureValue).toFixed(1)"></span>
+                                </label>
+                                <input type="range" id="temperature" name="temperature" min="0.1" max="2.0" step="0.1" x-model.number="temperatureValue"
+                                       class="w-full h-2 bg-gray-200 dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary dark:accent-primary-dark">
+                            </div>
+
+                            <div>
+                                <label for="top_p" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between group relative">
+                                    <span>
+                                        Top P
+                                        <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="Nucleus sampling. Considers only the most probable tokens with cumulative probability P. (Range: 0.1-1.0)">
+                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </span>
+                                    </span>
+                                     <span class="font-mono text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-section rounded" x-text="parseFloat(topPValue).toFixed(1)"></span>
+                                </label>
+                                <input type="range" id="top_p" name="top_p" min="0.1" max="1.0" step="0.1" x-model.number="topPValue"
+                                       class="w-full h-2 bg-gray-200 dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary dark:accent-primary-dark">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-6 flex flex-col">
+                 <div class="flex-grow bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20 flex flex-col relative min-h-[400px] lg:min-h-[500px]">
+
+                    <div x-show="loading" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                         class="loading-overlay absolute inset-0 bg-white/80 dark:bg-dark-card/80 backdrop-blur-md flex flex-col items-center justify-center z-10 rounded-lg">
+                        <svg class="animate-spin h-12 w-12 text-primary dark:text-primary-dark mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-lg font-semibold text-gray-700 dark:text-gray-300 loading-text-pulse">Generating text...</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 loading-subtext-fade">Hold on, the AI is thinking.</p>
+                    </div>
+
+                     <div class="w-full h-full flex flex-col overflow-hidden">
+                        <label class="block text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Generated Output
+                        </label>
+                        <div class="flex-grow bg-gray-50 dark:bg-dark-bg p-4 rounded-md border border-gray-300 dark:border-dark-border overflow-y-auto custom-scrollbar">
+                            {% if error %}
+                                <div class="text-center p-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-600/50 rounded-lg max-w-md mx-auto shadow-md">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <h3 class="text-xl font-semibold text-red-800 dark:text-red-200 mb-2">Generation Failed</h3>
+                                    <p class="text-sm text-red-600 dark:text-red-300">{{ error }}</p>
+                                </div>
+                            {% elif generated_text %}
+                                <pre class="text-sm text-gray-800 dark:text-gray-200 generated-text-output font-mono">{{ generated_text }}</pre>
+                            {% else %}
+                                <div class="text-center p-6 text-gray-400 dark:text-gray-500 flex flex-col items-center justify-center h-full">
+                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-5-5h11.5a2.5 2.5 0 002.5-2.5V7.5a2.5 2.5 0 00-2.5-2.5H5.5A2.5 2.5 0 003 7.5v9A2.5 2.5 0 005.5 19H7" />
+                                      </svg>
+                                    <p class="text-lg font-medium">Your generated text will appear here.</p>
+                                    <p class="text-sm">Enter a prompt and click "Generate Text".</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="mt-6">
+                     <button type="submit" :disabled="loading || !promptValue.trim()"
+                             class="generate-button w-full inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-semibold rounded-md shadow-lg text-white bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 dark:from-primary-dark dark:to-secondary-dark dark:hover:from-primary-dark/90 dark:hover:to-secondary-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-offset-dark-bg disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none">
+                         <svg x-show="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                         </svg>
+                         <svg x-show="!loading" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                             <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                         </svg>
+                         <span x-text="loading ? 'Generating...' : 'Generate Text'">Generate Text</span>
+                     </button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3 space-y-6">
+                 <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200/80 dark:border-dark-border/50">
+                        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                             </svg>
+                            Generation History
+                        </h2>
+                        <a href="{{ url_for('clear_history') }}" class="text-xs font-medium text-primary dark:text-primary-dark hover:underline focus:outline-none focus:ring-1 focus:ring-primary/50 rounded" title="Clear history for all generation types">Clear All</a>
+                    </div>
+                    <div class="space-y-3 max-h-[400px] lg:max-h-[calc(100vh-400px)] overflow-y-auto pr-2 custom-scrollbar"> {# Adjusted max-h #}
+                        {% if history %}
+                            {% set text_history_exists = false %}
+                            {% for item in history | reverse %} {# Show newest first #}
+                                {% if item.type == 'text' %}
+                                {% set text_history_exists = true %}
+                                 <a href="#" @click.prevent="promptValue='{{ item.prompt | e }}';"
+                                   class="block p-3 rounded-md bg-gray-50 dark:bg-dark-section border border-gray-200/50 dark:border-dark-border/30 hover:shadow-md hover:border-gray-300 dark:hover:border-dark-border/60 transition-all duration-150 group cursor-pointer">
+                                    <div class="flex items-center justify-between mb-1.5">
+                                         <span class="text-xs font-medium px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                                            Text
+                                         </span>
+                                          <span class="text-xs text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">Reuse Prompt</span>
+                                    </div>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 break-words" title="{{ item.prompt }}">{{ item.prompt }}</p>
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                             {% if not text_history_exists %}
+                                <p class="text-gray-500 dark:text-gray-400 italic text-sm py-4 text-center">No text generation history yet.</p>
+                             {% endif %}
+                        {% else %}
+                            <p class="text-gray-500 dark:text-gray-400 italic text-sm py-4 text-center">No generation history yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('alpine:init', () => {
+        // Page-specific Alpine logic if needed
+    })
+</script>
+{% endblock %}

@@ -1,0 +1,814 @@
+{# templates/index.html #}
+{% extends "base.html" %}
+
+{% block title %}Home | OmniGen{% endblock %}
+
+{# Remove top padding so hero sits flush under navbar #}
+{% block main_padding %}{% endblock %}
+
+{% block content %}
+<section class="relative pt-32 pb-24 overflow-hidden">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col lg:flex-row items-center justify-between">
+            <div class="lg:w-1/2 mb-16 lg:mb-0">
+                <div class="max-w-2xl hero-content">
+                    <h1 class="text-5xl md:text-6xl font-bold mb-8 text-dark dark:text-white leading-tight">
+                        Transform Ideas into Reality with <span class="text-primary dark:text-primary-dark">AI Magic</span>
+                      </h1>
+                      
+                      
+                    <p class="text-xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed hero-subtitle">
+                        Create stunning content in seconds using our state-of-the-art AI models.
+                        Generate text, images, and videos that captivate your audience.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 hero-cta-buttons">
+                        <a href="#model-selection"
+                           class="hero-cta-btn">
+                            Start Creating Now
+                        </a>
+                        <a href="#features"
+                           class="secondary-cta-btn">
+                            Explore Features
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:w-1/2 hero-illustration">
+                <div class="relative max-w-2xl mx-auto">
+                    <div class="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary-dark/10 dark:to-secondary-dark/10 rounded-3xl transform rotate-45 -translate-x-1/4 -translate-y-1/4 hero-illustration-bg"></div>
+                    <div class="relative glass-card p-8 rounded-3xl shadow-2xl hero-illustration-card">
+                        <div class="bg-light-card dark:bg-dark-card rounded-2xl overflow-hidden">
+                            <div class="p-6">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-12 h-12 rounded-full bg-primary/10 dark:bg-primary-dark/10 flex items-center justify-center mr-4 hero-illustration-icon">
+                                        <svg class="w-6 h-6 text-primary dark:text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-dark dark:text-white hero-illustration-text">Real-time Generation</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 hero-illustration-text">Processing request...</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-4 hero-illustration-lines">
+                                    <div class="h-4 bg-light-hover dark:bg-dark-hover rounded-full animate-pulse"></div>
+                                    <div class="h-4 bg-light-hover dark:bg-dark-hover rounded-full animate-pulse w-3/4"></div>
+                                    <div class="h-4 bg-light-hover dark:bg-dark-hover rounded-full animate-pulse w-1/2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<style>
+    #features{
+        border-radius:12px ;
+    }
+</style>
+
+<section id="features" class="py-16 bg-light-section dark:bg-dark-section">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4 text-dark dark:text-white features-title">Why Choose OmniGen?</h2>
+            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto features-subtitle">
+                Unleash your creativity with our cutting-edge AI platform designed for professionals
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 features-grid">
+            <div class="feature-card">
+                <div class="feature-icon bg-primary/10 dark:bg-primary-dark/10">
+                    <svg class="w-8 h-8 text-primary dark:text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-semibold mt-6 mb-3 text-dark dark:text-white">Smart Text Generation</h3>
+                <p class="text-gray-600 dark:text-gray-300">Create high-quality content with our advanced language model that understands context and nuance.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon bg-secondary/10 dark:bg-secondary-dark/10">
+                    <svg class="w-8 h-8 text-secondary dark:text-secondary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-semibold mt-6 mb-3 text-dark dark:text-white">Visual Creativity</h3>
+                <p class="text-gray-600 dark:text-gray-300">Generate stunning visuals from text prompts with photorealistic quality and artistic styles.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon bg-tertiary/10 dark:bg-tertiary-dark/10">
+                    <svg class="w-8 h-8 text-tertiary dark:text-tertiary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-semibold mt-6 mb-3 text-dark dark:text-white">Dynamic Video</h3>
+                <p class="text-gray-600 dark:text-gray-300">Produce engaging video content with smooth transitions and professional-grade editing.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="model-selection" class="py-16">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4 text-dark dark:text-white model-selection-title">Start Creating</h2>
+            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto model-selection-subtitle">
+                Choose your preferred content type and let our AI work its magic
+            </p>
+        </div>
+        <section class="pt-20 pb-16">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h1 class="text-4xl md:text-5xl font-bold mb-4 text-dark dark:text-white model-comparison-title">
+                        AI Model Selection
+                    </h1>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto model-comparison-subtitle">
+                        Choose from our state-of-the-art AI models to power your creative workflow
+                    </p>
+                </div>
+
+                <div class="mb-20 overflow-x-auto rounded-xl border border-light-border/20 dark:border-dark-border/20 model-table">
+                    <table class="w-full">
+                        <thead class="bg-light-section dark:bg-dark-section">
+                            <tr>
+                                <th class="text-left p-6">Model Type</th>
+                                <th class="p-6">Speed</th>
+                                <th class="p-6">Resolution</th>
+                                <th class="p-6">Max Length</th>
+                                <th class="p-6">Output Formats</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-t border-light-border/10 dark:border-dark-border/10">
+                                <td class="p-6 font-medium text-dark dark:text-white">Text Generation</td>
+                                <td class="p-6 text-center">
+                                    <div class="badge-success">Fast</div>
+                                </td>
+                                <td class="p-6 text-center text-gray-500 dark:text-gray-400">N/A</td>
+                                <td class="p-6 text-center">1024 tokens</td>
+                                <td class="p-6 text-center">TXT, JSON</td>
+                            </tr>
+                            <tr class="border-t border-light-border/10 dark:border-dark-border/10">
+                                <td class="p-6 font-medium text-dark dark:text-white">Image Generation</td>
+                                <td class="p-6 text-center">
+                                    <div class="badge-warning">Medium</div>
+                                </td>
+                                <td class="p-6 text-center">1024×1024px</td>
+                                <td class="p-6 text-center text-gray-500 dark:text-gray-400">N/A</td>
+                                <td class="p-6 text-center">PNG, JPG</td>
+                            </tr>
+                            <tr class="border-t border-light-border/10 dark:border-dark-border/10">
+                                <td class="p-6 font-medium text-dark dark:text-white">Video Generation</td>
+                                <td class="p-6 text-center">
+                                    <div class="badge-critical">Slow</div>
+                                </td>
+                                <td class="p-6 text-center">720p</td>
+                                <td class="p-6 text-center">60s</td>
+                                <td class="p-6 text-center">MP4, GIF</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8 model-cards-grid" >
+                    <div class="model-card group">
+                        <div class="h-full p-8 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border/20 dark:border-dark-border/20 hover:border-primary/30 transition-all relative overflow-hidden">
+                            <div class="absolute top-4 right-4 badge-primary model-card-badge">
+                                Most Popular
+                            </div>
+
+                            <div class="mb-6 flex justify-center">
+                                <div class="w-20 h-20 bg-primary/10 dark:bg-primary-dark/10 rounded-2xl flex items-center justify-center model-card-icon">
+                                    <svg class="w-10 h-10 text-primary dark:text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <h3 class="text-2xl font-semibold mb-3 text-dark dark:text-white model-card-title">
+                                Text Generation
+                                <span class="text-sm text-primary dark:text-primary-dark">(Qwen2-1.5B-Instruct)</span>
+                            </h3>
+
+                            <p class="text-gray-600 dark:text-gray-300 mb-6 model-card-description">
+                                Advanced language model for content creation, code generation
+                            </p>
+
+                            <div class="mb-6 model-card-speed">
+                                <div class="flex items-center justify-between text-sm mb-2">
+                                    <span class="text-gray-500 dark:text-gray-400">Speed</span>
+                                    <span class="font-medium text-dark dark:text-white">Fast</span>
+                                </div>
+                                <div class="w-full bg-light-hover dark:bg-dark-hover rounded-full h-2">
+                                    <div class="bg-primary dark:bg-primary-dark h-2 rounded-full w-3/4 model-card-progress"></div>
+                                </div>
+                            </div>
+
+                            <style>
+                                /* Add some basic styling for context, you can adjust this */
+                                body {
+                                  font-family: sans-serif;
+                                  padding: 20px;
+                                  background-color: #f4f4f4;
+                                }
+                              
+                                .model-card-features {
+                                  display: flex;
+                                  flex-wrap: wrap;
+                                  gap: 10px; /* Space between feature pills */
+                                  margin-bottom: 20px;
+        
+                                }
+
+                              
+                                .feature-pill {
+                                  display: flex;
+                                  align-items: center;
+                                  padding: 8px 15px;
+                                  background-color: #e0e0e0;
+                                  border-radius: 20px;
+                                  transition: all 0.3s ease; /* Smooth transition for hover effects */
+                                  cursor: pointer;
+                                }
+                              
+                                .feature-pill svg {
+                                  margin-right: 8px;
+                                  width: 18px; /* Adjust size as needed */
+                                  height: 18px; /* Adjust size as needed */
+                                  transition: transform 0.3s ease; /* Smooth transition for icon */
+                                }
+                              
+                                /* Feature pill hover effect */
+                                .feature-pill:hover {
+                                  background-color: #d0d0d0;
+                                  transform: translateY(-3px); /* Simple hop effect */
+                                  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+                                }
+                              
+                                .feature-pill:hover svg {
+                                  transform: scale(1.1); /* Slightly enlarge icon on hover */
+                                }
+                              
+                                .model-card-button {
+                                  display: inline-flex; /* Use inline-flex to align content and allow margin */
+                                  align-items: center;
+                                  padding: 10px 20px;
+                                  background-color: #007bff;
+                                  color: white;
+                                  border-radius: 5px;
+                                  text-decoration: none; /* Remove underline from link */
+                                  transition: all 0.3s ease; /* Smooth transition for hover effects */
+                                  overflow: hidden; /* Hide overflowing animated elements */
+                                  position: relative; /* Needed for absolute positioning of pseudo-elements */
+                                }
+                              
+                                .model-card-button svg {
+                                  margin-left: 8px;
+                                  width: 20px; /* Adjust size as needed */
+                                  height: 20px; /* Adjust size as needed */
+                                  transition: transform 0.3s ease; /* Smooth transition for icon */
+                                }
+                              
+                                /* Button hover effect */
+                                .model-card-button:hover {
+                                  background-color: #0056b3;
+                                  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+                                  transform: translateY(-2px); /* Slight lift effect */
+                                }
+                              
+                                .model-card-button:hover svg {
+                                  transform: translateX(5px); /* Slide arrow to the right */
+                                }
+                              
+                                /* Animation for button on hover (subtle ripple/pulse effect) */
+                                .model-card-button::before {
+                                  content: '';
+                                  position: absolute;
+                                  top: 50%;
+                                  left: 50%;
+                                  width: 0;
+                                  height: 0;
+                                  background: rgba(255, 255, 255, 0.2);
+                                  border-radius: 50%;
+                                  transform: translate(-50%, -50%);
+                                  opacity: 0;
+                                  transition: width 0.5s ease, height 0.5s ease, opacity 0.5s ease;
+                                }
+                              
+                                .model-card-button:hover::before {
+                                  width: 200%;
+                                  height: 200%;
+                                  opacity: 1;
+                                }
+                              
+                                /* Keyframes for a subtle pulsing animation on the button */
+                                @keyframes pulse {
+                                  0% {
+                                    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+                                  }
+                                  70% {
+                                    box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+                                  }
+                                  100% {
+                                    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+                                  }
+                                }
+                              
+                                /* Apply pulse animation on hover */
+                                .model-card-button:hover {
+                                   animation: pulse 1s infinite;
+                                }
+                              
+                              
+                                /* Styles for arrow buttons (example - you might add these separately if needed) */
+                                .arrow-button {
+                                  display: inline-flex;
+                                  align-items: center;
+                                  padding: 5px;
+                                  background-color: #ccc;
+                                  border-radius: 50%;
+                                  cursor: pointer;
+                                  transition: background-color 0.3s ease;
+                                }
+                              
+                                .arrow-button:hover {
+                                  background-color: #bbb;
+                                }
+                              
+                                /* Styles for tick buttons (example - you might add these separately if needed) */
+                                .tick-button {
+                                  display: inline-flex;
+                                  align-items: center;
+                                  padding: 5px;
+                                  background-color: #28a745; /* Green color */
+                                  color: white;
+                                  border-radius: 50%;
+                                  cursor: pointer;
+                                  transition: background-color 0.3s ease;
+                                }
+                              
+                                .tick-button:hover {
+                                  background-color: #218838; /* Darker green on hover */
+                                }
+                              
+                              </style>
+                              
+                              <script>
+                                const darkModeToggle = document.getElementById('darkModeToggle');
+                                const body = document.body;
+                                const modelCardFeatures = document.querySelector('.model-card-features'); // Ensure we have a reference
+                              
+                                darkModeToggle.addEventListener('click', () => {
+                                  body.classList.toggle('dark-mode');
+                                  localStorage.setItem('darkMode', body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
+                                });
+                              
+                                if (localStorage.getItem('darkMode') === 'enabled') {
+                                  body.classList.add('dark-mode');
+                                }
+                              </script>
+                              
+                              <div class="space-y-4 mb-8 model-card-features" style="color: #1e293b;">
+                                <div class="feature-pill">
+                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                  </svg>
+                                  1024 Token Context
+                                </div>
+                                <div class="feature-pill">
+                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                  </svg>
+                                  Multi-language Support
+                                </div>
+                                <div class="feature-pill">
+                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                  </svg>
+                                  Code Generation
+                                </div>
+                              </div>
+                              
+                              <a href="{{ url_for('text_generation') }}" class="model-card-button">
+                                Start Generating
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                </svg>
+                              </a>
+                              
+                        </div>
+                    </div>
+
+                    <div class="model-card group">
+                        <div class="h-full p-8 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border/20 dark:border-dark-border/20 hover:border-primary/30 transition-all relative overflow-hidden">
+                            <div class="mb-6 flex justify-center">
+                                <div class="w-20 h-20 bg-secondary/10 dark:bg-secondary-dark/10 rounded-2xl flex items-center justify-center model-card-icon">
+                                    <svg class="w-10 h-10 text-secondary dark:text-secondary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <h3 class="text-2xl font-semibold mb-3 text-dark dark:text-white model-card-title">
+                                Image Generation
+                                <span class="text-sm text-secondary dark:text-secondary-dark">(Stable Diffusion XL)</span>
+                            </h3>
+
+                            <p class="text-gray-600 dark:text-gray-300 mb-6 model-card-description">
+                                Create high-resolution images from text prompts with artistic control
+                            </p>
+
+                            <div class="mb-6 model-card-speed">
+                                <div class="flex items-center justify-between text-sm mb-2">
+                                    <span class="text-gray-500 dark:text-gray-400">Quality</span>
+                                    <span class="font-medium text-dark dark:text-white">Ultra HD</span>
+                                </div>
+                                <div class="w-full bg-light-hover dark:bg-dark-hover rounded-full h-2">
+                                    <div class="bg-secondary dark:bg-secondary-dark h-2 rounded-full w-4/5 model-card-progress"></div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4 mb-8 model-card-features" style="color: #1e293b;">
+                                <div class="feature-pill">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    1024×1024 Resolution
+                                </div>
+                                <div class="feature-pill">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Multiple Aspect Ratios
+                                </div>
+                                <div class="feature-pill">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Style Presets
+                                </div>
+                            </div>
+
+                            <a href="{{ url_for('image_generation') }}"
+                               class="model-card-button">
+                                Create Images
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="model-card group">
+                        <div class="h-full p-8 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border/20 dark:border-dark-border/20 hover:border-primary/30 transition-all relative overflow-hidden">
+                            <div class="absolute top-4 right-4 badge-new model-card-badge">
+                                Beta Access
+                            </div>
+
+                            <div class="mb-6 flex justify-center">
+                                <div class="w-20 h-20 bg-tertiary/10 dark:bg-tertiary-dark/10 rounded-2xl flex items-center justify-center model-card-icon">
+                                    <svg class="w-10 h-10 text-tertiary dark:text-tertiary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <h3 class="text-2xl font-semibold mb-3 text-dark dark:text-white model-card-title">
+                                Video Generation
+                                <span class="text-sm text-tertiary dark:text-tertiary-dark">(LTX Pipeline)</span>
+                            </h3>
+
+                            <p class="text-gray-600 dark:text-gray-300 mb-6 model-card-description">
+                                Generate dynamic video content with smooth transitions and effects
+                            </p>
+
+                            <div class="mb-6 model-card-speed">
+                                <div class="flex items-center justify-between text-sm mb-2">
+                                    <span class="text-gray-500 dark:text-gray-400">Duration</span>
+                                    <span class="font-medium text-dark dark:text-white">Up to 60s</span>
+                                </div>
+                                <div class="w-full bg-light-hover dark:bg-dark-hover rounded-full h-2">
+                                    <div class="bg-tertiary dark:bg-tertiary-dark h-2 rounded-full w-2/5 model-card-progress"></div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4 mb-8 model-card-features" style="color: #1e293b;">
+                                <div class="feature-pill">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    24 FPS Output
+                                </div>
+                                <div class="feature-pill">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Multiple Resolutions
+                                </div>
+                                <div class="feature-pill">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Multi-Format Export
+                                </div>
+                            </div>
+
+                            <a href="{{ url_for('video_generation') }}"
+                               class="model-card-button">
+                                Produce Videos
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }} {# Keep existing scripts from base.html #}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+// Helper function to split text into words for animation
+function splitWords(selector) {
+  const elements = document.querySelectorAll(selector);
+  elements.forEach(element => {
+    const textNodes = Array.from(element.childNodes).filter(node => node.nodeType === 3); // Text nodes only
+    textNodes.forEach(textNode => {
+      const words = textNode.textContent.trim().split(/\s+/);
+      const spans = words.map(word => {
+        const span = document.createElement('span');
+        span.classList.add('word');
+        span.style.display = 'inline-block';
+        span.style.opacity = 0;
+        span.style.transform = 'translateY(30px) rotateZ(3deg) scale(0.9)';
+        span.textContent = word + ' '; // Add space
+        return span;
+      });
+      spans.forEach(span => textNode.parentNode.insertBefore(span, textNode));
+      textNode.remove(); // Remove original
+    });
+  });
+}
+
+    // Apply splitWords to the hero title
+    splitWords('.hero-title');
+
+
+    // --- Hero Section Animations ---
+    const heroTimeline = anime.timeline({
+        easing: 'easeOutCubic',
+        duration: 800,
+        delay: 300 // Increased initial delay slightly to ensure DOM is ready
+    });
+
+    // Animate Hero Title words
+    heroTimeline.add({
+        targets: '.hero-title .word',
+        translateY: 0, // Animate to final position
+        opacity: 1, // Animate to fully visible
+        rotateZ: 0, // Animate to final rotation
+        scale: 1, // Animate to final scale
+        delay: anime.stagger(50) // Faster stagger for words
+    });
+
+    // Animate Hero Subtitle
+    heroTimeline.add({
+        targets: '.hero-subtitle',
+        translateY: [15, 0],
+        opacity: [0, 1],
+        duration: 600,
+        delay: 80
+    }, '-=400');
+
+    // Animate Hero CTA Buttons
+    heroTimeline.add({
+        targets: '.hero-cta-buttons a',
+        translateY: [15, 0],
+        opacity: [0, 1],
+        duration: 600,
+        delay: anime.stagger(60)
+    }, '-=300');
+
+    // Animate Hero Illustration Background
+    heroTimeline.add({
+        targets: '.hero-illustration-bg',
+        opacity: [0, 1],
+        rotate: [0, 45],
+        scale: [0.8, 1],
+        easing: 'easeOutExpo',
+        duration: 1000,
+        delay: 0
+    }, '-=500');
+
+    // Animate Hero Illustration Card
+    heroTimeline.add({
+        targets: '.hero-illustration-card',
+        translateY: [50, 0],
+        opacity: [0, 1],
+        rotateX: [15, 0],
+        easing: 'easeOutCubic',
+        duration: 800,
+        delay: 80
+    }, '-=700');
+
+     // Animate elements inside the illustration card
+     heroTimeline.add({
+        targets: '.hero-illustration-icon',
+        scale: [0.7, 1],
+        opacity: [0, 1],
+        easing: 'easeOutBack',
+        duration: 600,
+        delay: 100
+     }, '-=400');
+
+     heroTimeline.add({
+        targets: '.hero-illustration-text',
+        translateY: [10, 0],
+        opacity: [0, 1],
+        easing: 'easeOutQuad',
+        duration: 400,
+        delay: anime.stagger(60)
+     }, '-=300');
+
+     heroTimeline.add({
+        targets: '.hero-illustration-lines div',
+        opacity: [0, 1],
+        width: ['0%', function(el) { return el.style.width; }],
+        easing: 'easeOutQuad',
+        duration: 600,
+        delay: anime.stagger(80)
+     }, '-=200');
+
+
+    // --- Features Section Animations (Triggered on Scroll) ---
+    const featuresSection = document.getElementById('features');
+    const featuresObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                // Animate Features Section titles
+                anime({
+                    targets: '.features-title, .features-subtitle',
+                    translateY: [-15, 0], // Reduced initial translateY
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 700, // Reduced duration
+                    delay: anime.stagger(70) // Adjusted stagger
+                });
+
+                // Animate Feature Cards
+                anime({
+                    targets: '.features-grid .feature-card',
+                    translateY: [50, 0], // Reduced initial translateY
+                    opacity: [0, 1],
+                    rotateZ: [2, 0], // Reduced initial rotation
+                    easing: 'easeOutExpo',
+                    duration: 900, // Reduced duration
+                    delay: anime.stagger(120, {start: 300}) // Adjusted stagger and start delay
+                });
+
+                // Animate elements within feature cards (icons, text)
+                 anime({
+                    targets: '.features-grid .feature-card .feature-icon',
+                    scale: [0.7, 1], // Adjusted initial scale
+                    opacity: [0, 1],
+                    easing: 'easeOutBack',
+                    duration: 600, // Reduced duration
+                    delay: anime.stagger(120, {start: 400}) // Adjusted stagger and start delay
+                 });
+
+                 anime({
+                    targets: '.features-grid .feature-card h3, .features-grid .feature-card p',
+                    translateY: [10, 0], // Reduced initial translateY
+                    opacity: [0, 1],
+                    easing: 'easeOutQuad',
+                    duration: 400, // Reduced duration
+                    delay: anime.stagger(60, {start: 500}) // Adjusted stagger and start delay
+                 });
+
+
+                observer.unobserve(entry.target); // Stop observing once animation is triggered
+            }
+        });
+    }, { threshold: 0.1 }); // Adjusted threshold
+
+    featuresObserver.observe(featuresSection);
+
+
+    // --- Model Selection Section Animations (Triggered on Scroll) ---
+    const modelSection = document.getElementById('model-selection');
+    const modelObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                 // Animate Model Section titles
+                 anime({
+                    targets: '.model-selection-title, .model-selection-subtitle, .model-comparison-title, .model-comparison-subtitle',
+                    translateY: [-15, 0], // Reduced initial translateY
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 700, // Reduced duration
+                    delay: anime.stagger(70) // Adjusted stagger
+                });
+
+                // Animate Model Table
+                anime({
+                    targets: '.model-table',
+                    translateY: [30, 0], // Reduced initial translateY
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 800, // Reduced duration
+                    delay: 400 // Adjusted delay
+                });
+
+                // Animate Model Cards
+                anime({
+                    targets: '.model-cards-grid .model-card',
+                    translateY: [60, 0], // Reduced initial translateY
+                    opacity: [0, 1],
+                    rotateY: [3, 0], // Reduced initial rotateY
+                    easing: 'easeOutExpo',
+                    duration: 900, // Reduced duration
+                    delay: anime.stagger(180, {start: 700}) // Adjusted stagger and start delay
+                });
+
+                // Animate elements within model cards (badges, icons, text, progress, features)
+                 anime({
+                    targets: '.model-cards-grid .model-card .model-card-badge',
+                    scale: [0.95, 1], // Adjusted initial scale
+                    opacity: [0, 1],
+                    easing: 'easeOutBack',
+                    duration: 400, // Reduced duration
+                    delay: anime.stagger(180, {start: 800}) // Adjusted stagger and start delay
+                 });
+
+                 anime({
+                    targets: '.model-cards-grid .model-card .model-card-icon',
+                    scale: [0.7, 1], // Adjusted initial scale
+                    opacity: [0, 1],
+                    easing: 'easeOutBack',
+                    duration: 600, // Reduced duration
+                    delay: anime.stagger(180, {start: 900}) // Adjusted stagger and start delay
+                 });
+
+                 anime({
+                    targets: '.model-cards-grid .model-card .model-card-title, .model-cards-grid .model-card .model-card-description',
+                    translateY: [10, 0], // Reduced initial translateY
+                    opacity: [0, 1],
+                    easing: 'easeOutQuad',
+                    duration: 400, // Reduced duration
+                    delay: anime.stagger(60, {start: 1000}) // Adjusted stagger and start delay
+                 });
+
+                 anime({
+                    targets: '.model-cards-grid .model-card .model-card-progress',
+                    width: ['0%', function(el) { return el.style.width; }], // Animate width to its final value
+                    opacity: [0, 1],
+                    easing: 'easeOutQuad',
+                    duration: 600, // Reduced duration
+                     delay: anime.stagger(180, {start: 1100}) // Adjusted stagger and start delay
+                 });
+
+                 anime({
+                    targets: '.model-cards-grid .model-card .model-card-features .feature-pill',
+                    translateY: [8, 0], // Reduced initial translateY
+                    opacity: [0, 1],
+                    easing: 'easeOutQuad',
+                    duration: 300, // Reduced duration
+                    delay: anime.stagger(30, {start: 1200}) // Adjusted stagger and start delay
+                 });
+
+                 anime({
+                    targets: '.model-cards-grid .model-card-button',
+                    translateY: [10, 0], // Reduced initial translateY
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 600, // Reduced duration
+                    delay: anime.stagger(180, {start: 1300}) // Adjusted stagger and start delay
+                 });
+
+
+                observer.unobserve(entry.target); // Stop observing once animation is triggered
+            }
+        });
+    }, { threshold: 0.05 }); // Adjusted threshold to trigger earlier
+
+    modelObserver.observe(modelSection);
+
+
+});
+</script>
+{% endblock %}

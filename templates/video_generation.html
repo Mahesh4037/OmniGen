@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}AI Video Generation Studio{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    /* Apply the Inter font */
+    body { font-family: 'Inter', sans-serif; }
+
+    /* Custom scrollbar */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+    /* Alpine collapse */
+    [x-collapse] { overflow: hidden; }
+    [x-collapse].transitioning { transition: height 0.3s ease-in-out; }
+
+    /* Range input thumb */
+    input[type=range].slider-thumb { @apply h-4 w-4 bg-primary dark:bg-primary-dark rounded-full appearance-none cursor-pointer transition; }
+    input[type=range].slider-thumb:hover { @apply ring-2 ring-primary/30 dark:ring-primary-dark/30; }
+    input[type=range].accent-primary::-webkit-slider-thumb { @apply slider-thumb; }
+    .dark input[type=range].accent-primary-dark::-webkit-slider-thumb { @apply slider-thumb; }
+    input[type=range].accent-primary::-moz-range-thumb { @apply slider-thumb border-none; }
+    .dark input[type=range].accent-primary-dark::-moz-range-thumb { @apply slider-thumb border-none; }
+
+    /* Loading overlay animation */
+    .loading-overlay { transition: opacity 0.4s ease-in-out, backdrop-filter 0.4s ease-in-out; }
+
+    /* Button hover states */
+    .generate-button, .advanced-toggle-button { transition: all 0.25s ease-in-out; }
+    .generate-button:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); }
+
+    /* Video Player Aspect Ratio */
+    .video-container video { max-width: 100%; height: auto; display: block; }
+
+    /* ----- Custom Loading Animations ----- */
+    @keyframes text-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.02); }
+    }
+    .loading-text-main-pulse {
+        animation: text-pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes subtext-fade {
+        0%, 100% { opacity: 0.7; }
+        50% { opacity: 0.4; }
+    }
+    .loading-text-sub-fade {
+        animation: subtext-fade 2.2s infinite ease-in-out;
+        animation-delay: 0.2s; /* Optional delay */
+    }
+
+    @keyframes svg-scale-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    /* Apply this class directly to the SVG that also has animate-spin */
+    .loader-svg-pulse {
+        /* The existing animate-spin handles rotation.
+           This adds a scaling pulse. Modern browsers can compose these. */
+        animation: svg-scale-pulse 1.8s infinite ease-in-out;
+    }
+    /* ----- End Custom Loading Animations ----- */
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div x-data="{
+        loading: false,
+        advancedOpen: false,
+        promptValue: '{{ request.form['prompt'] if request.form['prompt'] else '' }}',
+        negativePromptValue: '{{ request.form['negative_prompt'] if request.form['negative_prompt'] else 'blurry, low quality, pixelated, noisy, grainy, deformed, text, watermark, signature, worst quality, lowres, flickering, glitch, artifacts' }}',
+        widthValue: {{ request.form['width'] or 768 }},
+        heightValue: {{ request.form['height'] or 512 }},
+        stepsValue: {{ request.form['num_inference_steps'] or 40 }},
+        framesValue: {{ request.form['num_frames'] or 121 }},
+        fpsValue: {{ request.form['fps'] or 24 }},
+
+        submitForm(event) {
+            this.loading = true;
+             this.$nextTick(() => {
+                 event.target.submit();
+             });
+        }
+    }"
+    class="font-sans"
+    >
+
+    <div class="mb-10 text-center">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-3 text-gray-900 dark:text-white tracking-tight"><span class="text-primary dark:text-primary-dark">AI Video</span> Generation Studio</h1>
+        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Bring your stories to life by generating dynamic video content from text.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('gen_video') }}" @submit.prevent="submitForm($event)">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <div class="lg:col-span-3 space-y-6">
+                <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <label for="prompt" class="block text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a1 1 0 011-1h12a1 1 0 011 1v4.293zM16 6H4v4.586l6 6 6-6V6zM8 9a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd" />
+                        </svg>
+                        Describe your video scene:
+                    </label>
+                    <textarea id="prompt" name="prompt" rows="6" required x-model="promptValue"
+                              class="w-full p-3 border border-gray-300 dark:border-dark-border rounded-md bg-gray-50 dark:bg-dark-bg focus:ring-2 focus:ring-primary/50 focus:border-primary dark:focus:ring-primary-dark/50 dark:focus:border-primary-dark transition duration-200 text-base placeholder-gray-400 dark:placeholder-gray-500"
+                              placeholder="e.g., A cinematic shot of a futuristic cityscape at sunset, flying cars zooming between skyscrapers..."
+                    ></textarea>
+                </div>
+
+                 <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <label for="negative_prompt" class="block text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center group relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                         </svg>
+                        Negative Prompt
+                        <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="Describe what you DON'T want to see (e.g., blurry, low quality, text, watermarks).">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </span>
+                    </label>
+                    <textarea id="negative_prompt" name="negative_prompt" rows="4" x-model="negativePromptValue"
+                              class="w-full p-2 border border-gray-300 dark:border-dark-border rounded-md bg-gray-50 dark:bg-dark-bg text-sm focus:ring-1 focus:ring-primary/50 focus:border-primary dark:focus:ring-primary-dark/50 dark:focus:border-primary-dark transition duration-150 placeholder-gray-400 dark:placeholder-gray-500"
+                              placeholder="e.g., blurry, low quality, text..."
+                    ></textarea>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-6 flex flex-col">
+                 <div class="flex-grow bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20 flex flex-col items-center justify-center relative min-h-[400px] lg:min-h-[500px]">
+
+                    <div x-show="loading" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                         class="loading-overlay absolute inset-0 bg-white/80 dark:bg-dark-card/80 backdrop-blur-md flex flex-col items-center justify-center z-10 rounded-lg">
+                        <svg class="animate-spin loader-svg-pulse h-12 w-12 text-primary dark:text-primary-dark mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-lg font-semibold text-gray-700 dark:text-gray-300 loading-text-main-pulse">Rendering your video...</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 loading-text-sub-fade">This can take some time, please wait.</p>
+                    </div>
+
+                       <div class="w-full h-full flex flex-col items-center justify-center video-container">
+                        {% if error %}
+                            <div class="text-center p-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-600/50 rounded-lg max-w-md shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h3 class="text-xl font-semibold text-red-800 dark:text-red-200 mb-2">Generation Failed</h3>
+                                <p class="text-sm text-red-600 dark:text-red-300">{{ error }}</p>
+                            </div>
+                        {% elif video_url %}
+                            <div class="w-full aspect-video bg-black rounded-md overflow-hidden shadow-md border border-gray-200 dark:border-dark-border/50">
+                                <video controls autoplay loop muted playsinline
+                                       src="{{ video_url }}"
+                                       class="w-full h-full object-contain">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                             <a href="{{ video_url }}" download="omnigen-video.mp4"
+                                class="mt-4 inline-flex items-center px-4 py-2 bg-white/80 dark:bg-black/70 backdrop-blur-sm border border-gray-300 dark:border-gray-600 rounded-full shadow-lg text-sm font-medium text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-black hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-primary-dark dark:focus:ring-offset-black/50">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                                Download Video
+                             </a>
+                        {% else %}
+                            <div class="text-center p-6 text-gray-400 dark:text-gray-500">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto mb-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                 </svg>
+                                <p class="text-lg font-medium">Your generated video will appear here.</p>
+                                <p class="text-sm">Describe the scene and click "Generate Video".</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                 </div>
+
+                 <div class="mt-6">
+                     <button type="submit" :disabled="loading || !promptValue.trim()"
+                             class="generate-button w-full inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-semibold rounded-md shadow-lg text-white bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 dark:from-primary-dark dark:to-secondary-dark dark:hover:from-primary-dark/90 dark:hover:to-secondary-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-offset-dark-bg disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none">
+                         <svg x-show="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                         </svg>
+                         <svg x-show="!loading" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /> <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                         </svg>
+                         <span x-text="loading ? 'Generating...' : 'Generate Video'">Generate Video</span>
+                     </button>
+                 </div>
+            </div>
+
+            <div class="lg:col-span-3 space-y-6">
+                 <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <button type="button" @click="advancedOpen = !advancedOpen" class="advanced-toggle-button flex justify-between items-center w-full mb-3 text-left group">
+                        <span class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                             </svg>
+                            Advanced Settings
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500 transform transition-transform duration-300 ease-in-out group-hover:text-gray-600 dark:group-hover:text-gray-300" :class="{ 'rotate-180': advancedOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div x-show="advancedOpen" x-collapse.duration.300ms x-cloak class="transitioning">
+                        <div class="space-y-5 pt-4 border-t border-gray-200/80 dark:border-dark-border/50">
+                             <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Width</label>
+                                    <input type="number" id="width" name="width" min="256" max="1024" step="64" x-model.number="widthValue"
+                                           class="w-full p-2 border border-gray-300 dark:border-dark-border rounded-md bg-gray-50 dark:bg-dark-bg text-sm focus:ring-1 focus:ring-primary/50 focus:border-primary dark:focus:ring-primary-dark/50 dark:focus:border-primary-dark transition duration-150">
+                                </div>
+                                 <div>
+                                    <label for="height" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Height</label>
+                                    <input type="number" id="height" name="height" min="256" max="1024" step="64" x-model.number="heightValue"
+                                           class="w-full p-2 border border-gray-300 dark:border-dark-border rounded-md bg-gray-50 dark:bg-dark-bg text-sm focus:ring-1 focus:ring-primary/50 focus:border-primary dark:focus:ring-primary-dark/50 dark:focus:border-primary-dark transition duration-150">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="steps" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between group relative">
+                                    <span>
+                                        Inference Steps
+                                        <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="Number of denoising steps. More steps take longer but can improve quality. (Range: 10-50)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </span>
+                                    </span>
+                                    <span class="font-mono text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-section rounded" x-text="stepsValue"></span>
+                                </label>
+                                <input type="range" id="num_inference_steps" name="num_inference_steps" min="10" max="50" step="1" x-model.number="stepsValue"
+                                       class="w-full h-2 bg-gray-200 dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary dark:accent-primary-dark">
+                            </div>
+
+                             <div>
+                                <label for="num_frames" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between group relative">
+                                    <span>
+                                        Number of Frames
+                                        <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="Total frames in the generated video. Affects video length and generation time. (Range: 16-200)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </span>
+                                    </span>
+                                    <span class="font-mono text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-section rounded" x-text="framesValue"></span>
+                                </label>
+                                <input type="range" id="num_frames" name="num_frames" min="16" max="200" step="1" x-model.number="framesValue"
+                                       class="w-full h-2 bg-gray-200 dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary dark:accent-primary-dark">
+                            </div>
+
+                            <div>
+                                <label for="fps" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between group relative">
+                                    <span>
+                                        Frames Per Second (FPS)
+                                        <span class="ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-help" title="Output video frame rate. Higher FPS means smoother motion but requires more frames for the same duration. (Range: 8-30)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4c0-1.1-.448-2.1-1.172-2.872l-1.172-.872z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a6 6 0 00-6-6h12a6 6 0 00-6 6z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </span>
+                                    </span>
+                                     <span class="font-mono text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-section rounded" x-text="fpsValue"></span>
+                                </label>
+                                <input type="range" id="fps" name="fps" min="8" max="30" step="1" x-model.number="fpsValue"
+                                       class="w-full h-2 bg-gray-200 dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary dark:accent-primary-dark">
+                            </div>
+
+                        </div>
+                    </div>
+                 </div>
+
+
+                 <div class="bg-white dark:bg-dark-card p-5 rounded-lg shadow-lg border border-gray-200/80 dark:border-dark-border/20">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200/80 dark:border-dark-border/50">
+                        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 text-primary dark:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                             </svg>
+                            Generation History
+                        </h2>
+                        <a href="{{ url_for('clear_history') }}" class="text-xs font-medium text-primary dark:text-primary-dark hover:underline focus:outline-none focus:ring-1 focus:ring-primary/50 rounded" title="Clear history for all generation types">Clear All</a>
+                    </div>
+                    <div class="space-y-3 max-h-[400px] lg:max-h-[calc(100vh-500px)] overflow-y-auto pr-2 custom-scrollbar"> {# Adjusted max-h #}
+                        {% if history %}
+                            {% set video_history_exists = false %}
+                            {% for item in history | reverse %} {# Show newest first #}
+                                {% if item.type == 'video' %}
+                                {% set video_history_exists = true %}
+                                <a href="#" @click.prevent="promptValue='{{ item.prompt | e }}'; negativePromptValue='{{ item.negative_prompt | default('', true) | e }}'; stepsValue={{ item.num_inference_steps | default(40) }}; framesValue={{ item.num_frames | default(121) }}; widthValue={{ item.width | default(768) }}; heightValue={{ item.height | default(512) }}; fpsValue={{ item.fps | default(24) }};"
+                                   class="block p-3 rounded-md bg-gray-50 dark:bg-dark-section border border-gray-200/50 dark:border-dark-border/30 hover:shadow-md hover:border-gray-300 dark:hover:border-dark-border/60 transition-all duration-150 group cursor-pointer">
+                                    <div class="flex items-center justify-between mb-1.5">
+                                         <span class="text-xs font-medium px-2 py-0.5 rounded bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                                            Video
+                                         </span>
+                                          <span class="text-xs text-gray-400 dark:text-gray-500 group-hover:text-primary dark:group-hover:text-primary-light transition-colors">Reuse Settings</span>
+                                    </div>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 break-words" title="{{ item.prompt }}">{{ item.prompt }}</p>
+                                     {# Optionally display more info like dimensions/frames #}
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ item.width }}x{{ item.height }} | {{ item.num_frames }} frames</p>
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                             {% if not video_history_exists %}
+                                <p class="text-gray-500 dark:text-gray-400 italic text-sm py-4 text-center">No video generation history yet.</p>
+                             {% endif %}
+                        {% else %}
+                            <p class="text-gray-500 dark:text-gray-400 italic text-sm py-4 text-center">No generation history yet.</p>
+                        {% endif %}
+                    </div>
+                 </div>
+
+            </div>
+
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('alpine:init', () => {
+       // Page-specific Alpine logic if needed
+    })
+</script>
+{% endblock %}
